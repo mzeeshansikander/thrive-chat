@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <title>Hello!</title>
+   </head>
+   <script type="module">
+      import { io } from "https://cdn.socket.io/4.4.1/socket.io.esm.min.js";
+  
+      const socket = io('http://localhost:3006');
+      socket.on('connect', () => {
+         console.log('connected');
+      })
+      socket.on('message', (message) => {
+        console.log('message', message);
+     })
+     
+   </script>
+   <body>Integrating Socket.io with Node.js and Express</body>
+</html>

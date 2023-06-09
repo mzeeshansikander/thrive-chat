@@ -13,6 +13,7 @@
     "axios": "^1.4.0",
     "dotenv": "^16.1.4",
     "express": "^4.18.2",
+    "firebase": "^9.22.2",
     "http-simple-proxy": "^1.0.5",
     "node-fetch": "^3.3.1",
     "nodemon": "^2.0.22",

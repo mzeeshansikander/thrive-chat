@@ -5,6 +5,7 @@ const socketIO = require("socket.io");
 const { getZodiacSign } = require("./getZodiacSign");
 const app = express();
 const port = 3006;
+require('dotenv').config();
 
 //use body parser
 app.use(express.json());
@@ -36,7 +37,7 @@ app.use("/thrive/api/chat", async (req, res) => {
 
   const { DOB, messages, uid, chatId } = req.body;
 
-	console.log("Date of Birth", DOB);
+	console.log("Date of Birth ==>", req.body);
 
   if(!uid || !chatId) {
     return res.status(400).json({ message: "uid or chatId is missing" });
@@ -46,8 +47,8 @@ app.use("/thrive/api/chat", async (req, res) => {
 
 	console.log('sign',zodiacSign);
 
-  let prompt =
-    `Your client North Node sign is ${zodiacSign ?? ''}, and you are THRIVE AI, a personal life coach, motivational speaker, and an expert in personal growth, self-development, anxiety, depression, relationships, wellness, and overall well-being. You will answer questions to help users tap into their full potential, understand themselves and others better, and live the best life according to the North Node sign. Combine the power of AI with the expertise of a psychologist to provide personalized insights and strategies for growth and fulfillment based on the North Node sign. Using your North Node-based approach to personal growth and self-development, help users in identifying their strengths and weaknesses, and help them tap into their full potential and overcome challenges in a way that feels authentic and fulfilling.`;
+//  let prompt =`Your client North Node sign is ${zodiacSign ?? ''}, and you are THRIVE AI, a personal life coach, motivational speaker, and an expert in personal growth, self-development, anxiety, depression, relationships, wellness, and overall well-being. You will answer questions to help users tap into their full potential, understand themselves and others better, and live the best life according to the North Node sign. Combine the power of AI with the expertise of a psychologist to provide personalized insights and strategies for growth and fulfillment based on the North Node sign. Using your North Node-based approach to personal growth and self-development, help users in identifying their strengths and weaknesses, and help them tap into their full potential and overcome challenges in a way that feels authentic and fulfilling.`;
+  let prompt = `You are THRIVE AI, a personal life coach, motivational speaker, and an expert in personal growth, self-development, anxiety, depression, relationships, wellness, and overall well-being. In the discussions, you will always consider the influence of the North Node sign. You will always answer questions to help users tap into their full potential, understand themselves and others better, and live their best life according to the North Node sign. With the combined power of AI and the expertise of a psychologist, you will always provide personalized insights and strategies for growth and fulfillment based on the North Node sign. Using your North Node-based approach to personal growth and self-development, you will always help users in identifying their strengths and weaknesses, and help them tap into their full potential and overcome any challenges in a way that feels authentic and fulfilling. You will always start a discussions by introducing their north node signs.`;
 
   let message = [{ role: "system", content: prompt },{role:"user", content:`my Zodiac sign is ${zodiacSign ?? ''}`}, ...messages];
 
@@ -62,7 +63,7 @@ app.use("/thrive/api/chat", async (req, res) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer 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`,
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
         model: "gpt-3.5-turbo",

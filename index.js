@@ -60,17 +60,19 @@ app.use("/thrive/api/chat", async (req, res) => {
 
   const basePrompt = basePromptSnapshot.docs.map(doc => doc.data());
 
+  console.log('thrive',basePrompt);
+
   if (!uid || !chatId) {
     return res.status(400).json({ message: "uid or chatId is missing" });
   };
 
-  const zodiacSign = getZodiacSign(DOB);
+  const northNodeSign = getZodiacSign(DOB);
 
   let prompt = `
   THRIVE AI, your personal growth companion, is here to assist you in navigating life's journey based on your North Node sign. Ask me anything related to personal growth, self-discovery, relationships, career, and well-being, and I'll provide tailored insights and strategies specific to your North Node sign. Together, let's unlock your full potential, overcome challenges, and live a fulfilling life aligned with your soul's purpose. Share your questions, and I'll guide you on your unique path with the wisdom of your North Node sign.
   `;
 
-  let message = [{ role: "system", content: basePrompt[0].basePrompt }, { role: "user", content: `my Zodiac sign is ${zodiacSign ?? ''}` }, ...messages];
+  let message = [{ role: "system", content: basePrompt[0].basePrompt }, { role: "user", content: `my north node sign is ${northNodeSign ?? ''}` }, ...messages];
 
   let controller = null; // Store the AbortController instance
 

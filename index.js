@@ -95,9 +95,8 @@ app.use("/thrive/api/chat", async (req, res) => {
       }),
       signal, // Pass the signal to the fetch request
     });
-
     const reader = response.body.getReader();
-
+console.log("OPEN AI RESP =====>", reader);
     const decoder = new TextDecoder("utf-8");
 
     let messagesTemp = "";

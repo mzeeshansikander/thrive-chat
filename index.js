@@ -60,7 +60,7 @@ app.use("/thrive/api/chat", async (req, res) => {
 
   const basePrompt = basePromptSnapshot.docs.map(doc => doc.data());
 
-  console.log('thrive',basePrompt);
+//  console.log('thrive',basePrompt);
 
   if (!uid || !chatId) {
     return res.status(400).json({ message: "uid or chatId is missing" });
@@ -75,6 +75,8 @@ app.use("/thrive/api/chat", async (req, res) => {
   let message = [{ role: "system", content: basePrompt[0].basePrompt }, { role: "user", content: `my north node sign is ${northNodeSign ?? ''}` }, ...messages];
 
   let controller = null; // Store the AbortController instance
+
+//console.log('msg', messages);
 
   try {
     // Create a new AbortController instance
@@ -96,7 +98,7 @@ app.use("/thrive/api/chat", async (req, res) => {
       signal, // Pass the signal to the fetch request
     });
     const reader = response.body.getReader();
-console.log("OPEN AI RESP =====>", reader);
+
     const decoder = new TextDecoder("utf-8");
 
     let messagesTemp = "";
@@ -112,7 +114,8 @@ console.log("OPEN AI RESP =====>", reader);
       // Massage and parse the chunk of data
       const chunk = decoder.decode(value);
       const lines = chunk.split("\n");
-      const parsedLines = lines
+console.log('line', lines); 
+     const parsedLines = lines
         .map((line) => line.replace(/^data: /, "").trim()) // Remove the "data: " prefix
         .filter((line) => line !== "" && line !== "[DONE]") // Remove empty lines and "[DONE]"
         .map((line) => JSON.parse(line)); // Parse the JSON string
@@ -127,7 +130,7 @@ console.log("OPEN AI RESP =====>", reader);
           content: content?.replace("undefined", null) ?? '',
           finished: parsedLine.choices[0].finish_reason === "stop" ?? false,
         };
-
+//console.log('content',content);
         // Emit the content to connected sockets
         io.emit(`${uid}_${chatId}`, AIResponseObj);
 
@@ -136,6 +139,8 @@ console.log("OPEN AI RESP =====>", reader);
         messagesTemp += content;
       }
     }
+
+//console.log('complete', messagesTemp)
     return res.status(200).json({ messages: messagesTemp });
   } catch (err) {
     console.log("err", err);

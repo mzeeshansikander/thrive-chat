@@ -5,11 +5,12 @@ const socketIO = require("socket.io");
 const { getZodiacSign } = require("./getZodiacSign");
 const app = express();
 const port = 3006;
-require('dotenv').config();
+require("dotenv").config();
 
 const { getFirestore, collection, getDocs } = require("firebase/firestore");
 
 const { initializeApp } = require("firebase/app");
+const { default: axios } = require("axios");
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -17,7 +18,7 @@ const firebaseConfig = {
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
 // Initialize Firebase
@@ -30,15 +31,15 @@ app.use(express.json());
 const server = http.createServer(app);
 
 const io = new socketIO.Server(server, {
-  path: '/thrive/api/chat-ws',
+  path: "/thrive/api/chat-ws",
   cors: {
     origin: "*",
-    methods: ['GET', 'POST'],
+    methods: ["GET", "POST"],
     allowedHeaders: [],
     credentials: false,
     autoConnect: true,
-  }
-})
+  },
+});
 
 io.on("connection", (socket) => {
   console.log("A client connected.");
@@ -49,34 +50,30 @@ io.on("connection", (socket) => {
   });
 });
 
-
 app.use("/thrive/api/chat", async (req, res) => {
-
   const { DOB, messages, uid, chatId } = req.body;
 
-  const pr = collection(db, 'prompt')
+  const pr = collection(db, "prompt");
 
   const basePromptSnapshot = await getDocs(pr);
 
-  const basePrompt = basePromptSnapshot.docs.map(doc => doc.data());
+  const basePrompt = basePromptSnapshot.docs.map((doc) => doc.data());
 
-//  console.log('thrive',basePrompt);
+  //  console.log('thrive',basePrompt);
 
   if (!uid || !chatId) {
     return res.status(400).json({ message: "uid or chatId is missing" });
-  };
+  }
 
   const northNodeSign = getZodiacSign(DOB);
 
-  let prompt = `
-  THRIVE AI, your personal growth companion, is here to assist you in navigating life's journey based on your North Node sign. Ask me anything related to personal growth, self-discovery, relationships, career, and well-being, and I'll provide tailored insights and strategies specific to your North Node sign. Together, let's unlock your full potential, overcome challenges, and live a fulfilling life aligned with your soul's purpose. Share your questions, and I'll guide you on your unique path with the wisdom of your North Node sign.
-  `;
-
-  let message = [{ role: "system", content: basePrompt[0].basePrompt }, { role: "user", content: `my north node sign is ${northNodeSign ?? ''}` }, ...messages];
+  let message = [
+    { role: "system", content: basePrompt[0].basePrompt },
+    { role: "user", content: `my north node sign is ${northNodeSign ?? ""}` },
+    ...messages,
+  ];
 
   let controller = null; // Store the AbortController instance
-
-//console.log('msg', messages);
 
   try {
     // Create a new AbortController instance
@@ -114,8 +111,8 @@ app.use("/thrive/api/chat", async (req, res) => {
       // Massage and parse the chunk of data
       const chunk = decoder.decode(value);
       const lines = chunk.split("\n");
-console.log('line', lines); 
-     const parsedLines = lines
+      // console.log("line", lines);
+      const parsedLines = lines
         .map((line) => line.replace(/^data: /, "").trim()) // Remove the "data: " prefix
         .filter((line) => line !== "" && line !== "[DONE]") // Remove empty lines and "[DONE]"
         .map((line) => JSON.parse(line)); // Parse the JSON string
@@ -127,10 +124,10 @@ console.log('line', lines);
 
         AIResponseObj = {
           //  remove undefined string if found from content
-          content: content?.replace("undefined", null) ?? '',
+          content: content?.replace("undefined", null) ?? "",
           finished: parsedLine.choices[0].finish_reason === "stop" ?? false,
         };
-//console.log('content',content);
+        //console.log('content',content);
         // Emit the content to connected sockets
         io.emit(`${uid}_${chatId}`, AIResponseObj);
 
@@ -140,8 +137,27 @@ console.log('line', lines);
       }
     }
 
-//console.log('complete', messagesTemp)
-    return res.status(200).json({ messages: messagesTemp });
+    // Get last object from message array and concatinate with messagesTemp.
+    const sentence =
+      message[message.length - 1].content +
+      " " +
+      messagesTemp?.replace("undefined", "");
+
+    console.log("AIResponseObj", sentence.split(" ").length);
+
+    // Update words count
+    const { data: sent } = await axios.post(
+      "https://us-central1-thrive-8e99c.cloudfunctions.net/updateFirestoreValue",
+      {
+        uid,
+        sentence,
+      }
+    );
+
+    return res.status(200).json({
+      messages: messagesTemp?.replace("undefined", ""),
+      wordCount: sent.data.wordCount,
+    });
   } catch (err) {
     console.log("err", err);
   }
@@ -151,4 +167,3 @@ console.log('line', lines);
 server.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
 });
-
